@@ -1,0 +1,4784 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Service Timer</title>
+
+    <style>
+        :root {
+            color-scheme: dark;
+
+            --bg: #171a1f;
+            --panel: #22262d;
+            --panel2: #2b3038;
+            --border: #3e4650;
+
+            --text: #f4f6f8;
+            --muted: #9da7b4;
+
+            --green: #58b66b;
+            --green-dark: #337d42;
+
+            --yellow: #e5b94d;
+            --red: #e06b6b;
+
+            --input: #111419;
+
+            --button: #343b45;
+            --button-hover: #434c58;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+
+            width: 100%;
+
+            background: var(--bg);
+            color: var(--text);
+
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Arial,
+                sans-serif;
+        }
+
+        body {
+            padding: 10px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 520px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            margin: 0;
+
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .clock {
+            margin-top: 4px;
+            margin-bottom: 12px;
+
+            color: var(--muted);
+
+            font-size: 13px;
+        }
+
+        .panel {
+            margin-bottom: 10px;
+
+            padding: 12px;
+
+            background: var(--panel);
+
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .panel-title {
+            margin-bottom: 10px;
+
+            font-size: 12px;
+            font-weight: 700;
+
+            color: var(--muted);
+
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .connection {
+            display: flex;
+            align-items: center;
+
+            gap: 8px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+
+            min-width: 10px;
+
+            border-radius: 50%;
+
+            background: var(--red);
+        }
+
+        .dot.connected {
+            background: var(--green);
+        }
+
+        .dot.connecting {
+            background: var(--yellow);
+        }
+
+        .connection-text {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .countdown {
+            margin: 16px 0 7px 0;
+
+            text-align: center;
+
+            font-size: 52px;
+            line-height: 1;
+
+            font-weight: 700;
+
+            font-variant-numeric: tabular-nums;
+        }
+
+        .countdown.waiting {
+            font-size: 28px;
+            color: var(--muted);
+        }
+
+        .countdown.negative {
+            color: var(--yellow);
+        }
+
+        .mode {
+            text-align: center;
+
+            font-size: 12px;
+
+            color: var(--muted);
+
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .mode.active {
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        .mode.override {
+            color: var(--yellow);
+            font-weight: 700;
+        }
+
+        .info-grid {
+            display: grid;
+
+            grid-template-columns:
+                1fr
+                auto;
+
+            gap:
+                6px
+                12px;
+
+            font-size: 14px;
+        }
+
+        .info-grid .label {
+            color: var(--muted);
+        }
+
+        .info-grid .value {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .separator {
+            height: 1px;
+
+            margin: 12px 0;
+
+            background: var(--border);
+        }
+
+        .form-row {
+            margin-bottom: 11px;
+        }
+
+        label {
+            display: block;
+
+            margin-bottom: 5px;
+
+            color: var(--muted);
+
+            font-size: 13px;
+        }
+
+        input,
+        select {
+            width: 100%;
+
+            min-height: 40px;
+
+            padding: 7px 9px;
+
+            border:
+                1px solid
+                var(--border);
+
+            border-radius: 5px;
+
+            background: var(--input);
+            color: var(--text);
+
+            font-size: 15px;
+
+            outline: none;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #778392;
+        }
+
+        button {
+            min-height: 40px;
+
+            padding: 8px 10px;
+
+            border:
+                1px solid
+                var(--border);
+
+            border-radius: 5px;
+
+            background: var(--button);
+            color: var(--text);
+
+            font-size: 13px;
+            font-weight: 600;
+
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: var(--button-hover);
+        }
+
+        button.primary {
+            background: var(--green-dark);
+            border-color: var(--green);
+        }
+
+        button.primary:hover {
+            background: var(--green);
+        }
+
+        button.warning {
+            border-color: #8a742c;
+        }
+
+        button.danger {
+            border-color: #843939;
+        }
+
+        .button-row {
+            display: grid;
+
+            grid-template-columns:
+                1fr
+                1fr;
+
+            gap: 7px;
+        }
+
+        .button-row.three {
+            grid-template-columns:
+                1fr
+                1fr
+                1fr;
+        }
+
+        .small {
+            margin-top: 7px;
+
+            color: var(--muted);
+
+            font-size: 11px;
+            line-height: 1.45;
+        }
+
+        .message {
+            min-height: 34px;
+
+            margin-top: 10px;
+
+            padding: 8px 9px;
+
+            border-radius: 5px;
+
+            background: var(--panel2);
+
+            color: var(--muted);
+
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .message.success {
+            color: #b8efbf;
+        }
+
+        .message.error {
+            color: #ffb5b5;
+        }
+
+        .connection-settings {
+            display: none;
+        }
+
+        .connection-settings.visible {
+            display: block;
+        }
+
+        .checkbox-line {
+            display: flex;
+            align-items: center;
+
+            gap: 7px;
+
+            margin-top: 8px;
+        }
+
+        .checkbox-line input {
+            width: auto;
+            min-height: auto;
+
+            margin: 0;
+        }
+
+        .checkbox-line label {
+            margin: 0;
+        }
+
+        @media (max-width: 360px) {
+
+            .button-row,
+            .button-row.three {
+                grid-template-columns: 1fr;
+            }
+
+            .countdown {
+                font-size: 42px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>
+        Service Timer
+    </h1>
+
+    <div
+        id="currentClock"
+        class="clock"
+    >
+        --
+    </div>
+
+
+    <!-- =====================================================
+         STATUS
+         ===================================================== -->
+
+    <div class="panel">
+
+        <div class="panel-title">
+            Timerstatus
+        </div>
+
+
+        <div class="connection">
+
+            <div
+                id="connectionDot"
+                class="dot"
+            ></div>
+
+            <div
+                id="connectionStatus"
+                class="connection-text"
+            >
+                Ikke koblet til OBS
+            </div>
+
+        </div>
+
+
+        <div
+            id="countdownDisplay"
+            class="countdown waiting"
+        >
+            --
+        </div>
+
+
+        <div
+            id="timerMode"
+            class="mode"
+        >
+            Venter
+        </div>
+
+
+        <div class="separator"></div>
+
+
+        <div class="info-grid">
+
+            <div class="label">
+                Dag
+            </div>
+
+            <div
+                id="dayValue"
+                class="value"
+            >
+                -
+            </div>
+
+
+            <div class="label">
+                Standard start
+            </div>
+
+            <div
+                id="standardTimeValue"
+                class="value"
+            >
+                -
+            </div>
+
+
+            <div class="label">
+                Dagens start
+            </div>
+
+            <div
+                id="effectiveTimeValue"
+                class="value"
+            >
+                -
+            </div>
+
+
+            <div class="label">
+                Nedtelling
+            </div>
+
+            <div
+                id="countdownMinutesValue"
+                class="value"
+            >
+                -
+            </div>
+
+
+            <div class="label">
+                Timer vises fra
+            </div>
+
+            <div
+                id="countdownStartValue"
+                class="value"
+            >
+                -
+            </div>
+
+
+            <div class="label">
+                Etter 00:00
+            </div>
+
+            <div
+                id="negativeValue"
+                class="value"
+            >
+                -
+            </div>
+
+
+            <div class="label">
+                Aktiv OBS-scene
+            </div>
+
+            <div
+                id="currentSceneValue"
+                class="value"
+            >
+                -
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         DAGENS INNSTILLINGER
+         ===================================================== -->
+
+    <div class="panel">
+
+        <div class="panel-title">
+            Endre kun i dag
+        </div>
+
+
+        <div class="form-row">
+
+            <label for="overrideTime">
+                Gudstjenesten starter
+            </label>
+
+            <input
+                id="overrideTime"
+                type="time"
+                step="60"
+            >
+
+        </div>
+
+
+        <div class="form-row">
+
+            <label for="countdownMinutes">
+                Hvor lenge før start skal timeren vises?
+            </label>
+
+            <select id="countdownMinutes">
+
+                <option value="5">
+                    5 minutter
+                </option>
+
+                <option value="10">
+                    10 minutter
+                </option>
+
+                <option value="15">
+                    15 minutter
+                </option>
+
+                <option value="20">
+                    20 minutter
+                </option>
+
+                <option value="30">
+                    30 minutter
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="form-row">
+
+            <label for="negativeDuration">
+                Hva skal skje etter 00:00?
+            </label>
+
+            <select id="negativeDuration">
+
+                <option value="0">
+                    Skjul ved 00:00
+                </option>
+
+                <option value="15">
+                    Vis til -00:15
+                </option>
+
+                <option value="30">
+                    Vis til -00:30
+                </option>
+
+                <option value="60">
+                    Vis til -01:00
+                </option>
+
+                <option value="120">
+                    Vis til -02:00
+                </option>
+
+                <option value="300">
+                    Vis til -05:00
+                </option>
+
+                <option value="-1">
+                    Fortsett i minus uten grense
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="button-row">
+
+            <button
+                id="applyTodayButton"
+                type="button"
+                class="primary"
+            >
+                Bruk i dag
+            </button>
+
+            <button
+                id="resetTodayButton"
+                type="button"
+                class="danger"
+            >
+                Tilbake til standard
+            </button>
+
+        </div>
+
+
+        <div class="small">
+            Endringene gjelder kun dagens dato.
+            Neste onsdag eller lørdag brukes standardtidene igjen.
+        </div>
+
+
+        <div class="separator"></div>
+
+
+        <button
+            id="startFromNowButton"
+            type="button"
+            class="primary"
+            style="width: 100%;"
+        >
+            Start valgt nedtelling fra nå
+        </button>
+
+
+        <div class="small">
+            Hvis du har valgt 15 minutter, blir starttid
+            automatisk satt til 15 minutter fra nå.
+        </div>
+
+
+        <div class="separator"></div>
+
+
+        <div class="button-row three">
+
+            <button
+                id="addOneMinuteButton"
+                type="button"
+                class="warning"
+            >
+                +1 min
+            </button>
+
+            <button
+                id="addFiveMinutesButton"
+                type="button"
+                class="warning"
+            >
+                +5 min
+            </button>
+
+            <button
+                id="hideNowButton"
+                type="button"
+                class="danger"
+            >
+                Skjul nå
+            </button>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         OBS INNSTILLINGER
+         ===================================================== -->
+
+    <div class="panel">
+
+        <div class="panel-title">
+            OBS WebSocket
+        </div>
+
+
+        <button
+            id="showConnectionButton"
+            type="button"
+            style="width: 100%;"
+        >
+            Vis tilkoblingsinnstillinger
+        </button>
+
+
+        <div
+            id="connectionSettings"
+            class="connection-settings"
+        >
+
+            <div class="separator"></div>
+
+
+            <div class="form-row">
+
+                <label for="websocketAddress">
+                    Adresse
+                </label>
+
+                <input
+                    id="websocketAddress"
+                    type="text"
+                    value="ws://127.0.0.1:4455"
+                >
+
+            </div>
+
+
+            <div class="form-row">
+
+                <label for="websocketPassword">
+                    WebSocket-passord
+                </label>
+
+                <input
+                    id="websocketPassword"
+                    type="password"
+                    autocomplete="off"
+                >
+
+
+                <div class="checkbox-line">
+
+                    <input
+                        id="rememberPassword"
+                        type="checkbox"
+                    >
+
+                    <label for="rememberPassword">
+                        Husk passord på denne PC-en
+                    </label>
+
+                </div>
+
+            </div>
+
+
+            <div class="button-row">
+
+                <button
+                    id="connectButton"
+                    type="button"
+                    class="primary"
+                >
+                    Koble til
+                </button>
+
+                <button
+                    id="disconnectButton"
+                    type="button"
+                >
+                    Koble fra
+                </button>
+
+            </div>
+
+
+            <div class="separator"></div>
+
+
+            <div class="button-row">
+
+                <button
+                    id="testShowButton"
+                    type="button"
+                >
+                    Test vis timer
+                </button>
+
+                <button
+                    id="testHideButton"
+                    type="button"
+                >
+                    Test skjul timer
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="messageBox"
+            class="message"
+        >
+            Klar.
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<script>
+"use strict";
+
+
+/* ============================================================
+   ============================================================
+                 STANDARDINNSTILLINGER
+   ============================================================
+   ============================================================
+
+   DETTE ER OMRÅDET DU NORMALT EVENTUELT ENDRER.
+
+   JavaScript ukedager:
+
+   0 = søndag
+   1 = mandag
+   2 = tirsdag
+   3 = onsdag
+   4 = torsdag
+   5 = fredag
+   6 = lørdag
+*/
+
+
+const CONFIG = {
+
+    /*
+        STANDARDTIDER
+    */
+
+    schedule: {
+
+        3: {
+            name: "Onsdag",
+            serviceTime: "19:00",
+            countdownMinutes: 5
+        },
+
+        6: {
+            name: "Lørdag",
+            serviceTime: "18:30",
+            countdownMinutes: 5
+        }
+
+    },
+
+
+    /*
+        STANDARD ETTER 00:00
+
+        0   = skjul ved 00:00
+        15  = vis til -00:15
+        30  = vis til -00:30
+        60  = vis til -01:00
+        -1  = fortsett uten grense
+    */
+
+    defaultNegativeSeconds: 30,
+
+
+    /*
+        OBS SOURCES
+
+        Disse navnene må være NØYAKTIG like
+        som navnene i OBS.
+    */
+
+    timerTextSource:
+        "Service Timer",
+
+    timerBackgroundSource:
+        "Timer Background",
+
+
+    /*
+        OBS WebSocket
+    */
+
+    defaultWebSocketAddress:
+        "ws://127.0.0.1:4455",
+
+
+    /*
+        Hvor ofte lokal timerlogikk oppdateres
+    */
+
+    tickMilliseconds:
+        100,
+
+
+    /*
+        Hvor ofte vi kontrollerer hvilken
+        OBS-scene som er aktiv mens timer går.
+    */
+
+    sceneCheckMilliseconds:
+        750
+
+};
+
+
+
+/* ============================================================
+   HTML ELEMENTER
+   ============================================================ */
+
+const elements = {
+
+    currentClock:
+        document.getElementById(
+            "currentClock"
+        ),
+
+    connectionDot:
+        document.getElementById(
+            "connectionDot"
+        ),
+
+    connectionStatus:
+        document.getElementById(
+            "connectionStatus"
+        ),
+
+    countdownDisplay:
+        document.getElementById(
+            "countdownDisplay"
+        ),
+
+    timerMode:
+        document.getElementById(
+            "timerMode"
+        ),
+
+    dayValue:
+        document.getElementById(
+            "dayValue"
+        ),
+
+    standardTimeValue:
+        document.getElementById(
+            "standardTimeValue"
+        ),
+
+    effectiveTimeValue:
+        document.getElementById(
+            "effectiveTimeValue"
+        ),
+
+    countdownMinutesValue:
+        document.getElementById(
+            "countdownMinutesValue"
+        ),
+
+    countdownStartValue:
+        document.getElementById(
+            "countdownStartValue"
+        ),
+
+    negativeValue:
+        document.getElementById(
+            "negativeValue"
+        ),
+
+    currentSceneValue:
+        document.getElementById(
+            "currentSceneValue"
+        ),
+
+    overrideTime:
+        document.getElementById(
+            "overrideTime"
+        ),
+
+    countdownMinutes:
+        document.getElementById(
+            "countdownMinutes"
+        ),
+
+    negativeDuration:
+        document.getElementById(
+            "negativeDuration"
+        ),
+
+    applyTodayButton:
+        document.getElementById(
+            "applyTodayButton"
+        ),
+
+    resetTodayButton:
+        document.getElementById(
+            "resetTodayButton"
+        ),
+
+    startFromNowButton:
+        document.getElementById(
+            "startFromNowButton"
+        ),
+
+    addOneMinuteButton:
+        document.getElementById(
+            "addOneMinuteButton"
+        ),
+
+    addFiveMinutesButton:
+        document.getElementById(
+            "addFiveMinutesButton"
+        ),
+
+    hideNowButton:
+        document.getElementById(
+            "hideNowButton"
+        ),
+
+    showConnectionButton:
+        document.getElementById(
+            "showConnectionButton"
+        ),
+
+    connectionSettings:
+        document.getElementById(
+            "connectionSettings"
+        ),
+
+    websocketAddress:
+        document.getElementById(
+            "websocketAddress"
+        ),
+
+    websocketPassword:
+        document.getElementById(
+            "websocketPassword"
+        ),
+
+    rememberPassword:
+        document.getElementById(
+            "rememberPassword"
+        ),
+
+    connectButton:
+        document.getElementById(
+            "connectButton"
+        ),
+
+    disconnectButton:
+        document.getElementById(
+            "disconnectButton"
+        ),
+
+    testShowButton:
+        document.getElementById(
+            "testShowButton"
+        ),
+
+    testHideButton:
+        document.getElementById(
+            "testHideButton"
+        ),
+
+    messageBox:
+        document.getElementById(
+            "messageBox"
+        )
+
+};
+
+
+
+/* ============================================================
+   LOCAL STORAGE
+   ============================================================ */
+
+const STORAGE = {
+
+    todayOverride:
+        "church_service_timer_override_v3",
+
+    websocketAddress:
+        "church_service_timer_ws_address_v3",
+
+    websocketPassword:
+        "church_service_timer_ws_password_v3",
+
+    rememberPassword:
+        "church_service_timer_remember_password_v3"
+
+};
+
+
+
+/* ============================================================
+   GLOBAL TILSTAND
+   ============================================================ */
+
+let socket = null;
+
+let obsConnected = false;
+
+let intentionalDisconnect = false;
+
+let reconnectTimer = null;
+
+let reconnectAttempts = 0;
+
+let requestCounter = 0;
+
+let processing = false;
+
+let lastTextSent = null;
+
+let previousScheduleKey = null;
+
+let manuallyHidden = false;
+
+let lastSceneCheck = 0;
+
+let lastCurrentScene = null;
+
+
+/*
+    Alle scener vi har slått timeren på i.
+
+    Når timeren er ferdig kan vi dermed
+    eksplisitt slå timeren av igjen i disse.
+*/
+
+const timerEnabledScenes =
+    new Set();
+
+
+/*
+    Cache av scene-item IDs.
+
+    Struktur:
+
+    sceneItemCache.get("Scene 1")
+
+    {
+        timer: 123,
+        background: 456
+    }
+*/
+
+const sceneItemCache =
+    new Map();
+
+
+const pendingRequests =
+    new Map();
+
+
+
+/* ============================================================
+   DATO / TID
+   ============================================================ */
+
+function pad2(value) {
+
+    return String(value)
+        .padStart(2, "0");
+
+}
+
+
+function getDateKey(date) {
+
+    return (
+        date.getFullYear()
+        +
+        "-"
+        +
+        pad2(
+            date.getMonth() + 1
+        )
+        +
+        "-"
+        +
+        pad2(
+            date.getDate()
+        )
+    );
+
+}
+
+
+function formatClock(date) {
+
+    return (
+        pad2(
+            date.getHours()
+        )
+        +
+        ":"
+        +
+        pad2(
+            date.getMinutes()
+        )
+        +
+        ":"
+        +
+        pad2(
+            date.getSeconds()
+        )
+    );
+
+}
+
+
+function formatHHMM(date) {
+
+    return (
+        pad2(
+            date.getHours()
+        )
+        +
+        ":"
+        +
+        pad2(
+            date.getMinutes()
+        )
+    );
+
+}
+
+
+function formatNorwegianDate(date) {
+
+    const days = [
+
+        "Søndag",
+        "Mandag",
+        "Tirsdag",
+        "Onsdag",
+        "Torsdag",
+        "Fredag",
+        "Lørdag"
+
+    ];
+
+
+    return (
+        days[
+            date.getDay()
+        ]
+        +
+        " "
+        +
+        pad2(
+            date.getDate()
+        )
+        +
+        "."
+        +
+        pad2(
+            date.getMonth() + 1
+        )
+        +
+        "."
+        +
+        date.getFullYear()
+    );
+
+}
+
+
+function timeStringToDate(
+    date,
+    timeString
+) {
+
+    if (
+        typeof timeString
+        !==
+        "string"
+        ||
+        !/^\d{2}:\d{2}$/
+            .test(
+                timeString
+            )
+    ) {
+
+        return null;
+
+    }
+
+
+    const parts =
+        timeString
+            .split(":")
+            .map(Number);
+
+
+    const hours =
+        parts[0];
+
+    const minutes =
+        parts[1];
+
+
+    if (
+        hours < 0
+        ||
+        hours > 23
+        ||
+        minutes < 0
+        ||
+        minutes > 59
+    ) {
+
+        return null;
+
+    }
+
+
+    return new Date(
+
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+
+        hours,
+        minutes,
+
+        0,
+        0
+
+    );
+
+}
+
+
+
+/* ============================================================
+   TIMERFORMATERING
+   ============================================================ */
+
+function formatPositiveCountdown(
+    milliseconds
+) {
+
+    const totalSeconds =
+        Math.max(
+
+            0,
+
+            Math.ceil(
+                milliseconds
+                /
+                1000
+            )
+
+        );
+
+
+    const minutes =
+        Math.floor(
+            totalSeconds
+            /
+            60
+        );
+
+
+    const seconds =
+        totalSeconds
+        %
+        60;
+
+
+    return (
+        pad2(minutes)
+        +
+        ":"
+        +
+        pad2(seconds)
+    );
+
+}
+
+
+function formatNegativeCountdown(
+    millisecondsPast
+) {
+
+    const totalSeconds =
+        Math.max(
+
+            0,
+
+            Math.floor(
+                millisecondsPast
+                /
+                1000
+            )
+
+        );
+
+
+    const minutes =
+        Math.floor(
+            totalSeconds
+            /
+            60
+        );
+
+
+    const seconds =
+        totalSeconds
+        %
+        60;
+
+
+    return (
+        "-"
+        +
+        pad2(minutes)
+        +
+        ":"
+        +
+        pad2(seconds)
+    );
+
+}
+
+
+
+/* ============================================================
+   MELDINGER
+   ============================================================ */
+
+function showMessage(
+    message,
+    type = "normal"
+) {
+
+    elements.messageBox
+        .textContent =
+        message;
+
+
+    elements.messageBox
+        .classList
+        .remove(
+            "success",
+            "error"
+        );
+
+
+    if (
+        type ===
+        "success"
+    ) {
+
+        elements.messageBox
+            .classList
+            .add(
+                "success"
+            );
+
+    }
+
+
+    if (
+        type ===
+        "error"
+    ) {
+
+        elements.messageBox
+            .classList
+            .add(
+                "error"
+            );
+
+    }
+
+}
+
+
+
+/* ============================================================
+   DAGENS OVERRIDE
+   ============================================================ */
+
+function getStoredOverride() {
+
+    const raw =
+        localStorage.getItem(
+            STORAGE.todayOverride
+        );
+
+
+    if (!raw) {
+
+        return null;
+
+    }
+
+
+    try {
+
+        return JSON.parse(
+            raw
+        );
+
+    } catch (error) {
+
+        console.error(
+            error
+        );
+
+        return null;
+
+    }
+
+}
+
+
+function saveTodayOverride(
+    data
+) {
+
+    localStorage.setItem(
+
+        STORAGE.todayOverride,
+
+        JSON.stringify(
+            data
+        )
+
+    );
+
+}
+
+
+function clearTodayOverride() {
+
+    localStorage.removeItem(
+        STORAGE.todayOverride
+    );
+
+}
+
+
+function getValidOverride(
+    now
+) {
+
+    const override =
+        getStoredOverride();
+
+
+    if (!override) {
+
+        return null;
+
+    }
+
+
+    /*
+        Gammel override slettes automatisk.
+    */
+
+    if (
+        override.date
+        !==
+        getDateKey(now)
+    ) {
+
+        clearTodayOverride();
+
+        return null;
+
+    }
+
+
+    return override;
+
+}
+
+
+
+/* ============================================================
+   DAGENS PLAN
+   ============================================================ */
+
+function getTodaySchedule(
+    now
+) {
+
+    const standard =
+        CONFIG.schedule[
+            now.getDay()
+        ]
+        ||
+        null;
+
+
+    const override =
+        getValidOverride(
+            now
+        );
+
+
+    /*
+        Ingen standardplan og ingen manuell override.
+    */
+
+    if (
+        !standard
+        &&
+        !override
+    ) {
+
+        return null;
+
+    }
+
+
+    let serviceDate;
+
+    let countdownMinutes;
+
+    let negativeSeconds;
+
+    let dayName;
+
+    let isOverride =
+        false;
+
+
+    /*
+        STANDARD
+    */
+
+    if (standard) {
+
+        serviceDate =
+            timeStringToDate(
+
+                now,
+
+                standard.serviceTime
+
+            );
+
+
+        countdownMinutes =
+            Number(
+                standard.countdownMinutes
+            );
+
+
+        negativeSeconds =
+            Number(
+                CONFIG.defaultNegativeSeconds
+            );
+
+
+        dayName =
+            standard.name;
+
+    } else {
+
+        serviceDate =
+            null;
+
+        countdownMinutes =
+            5;
+
+        negativeSeconds =
+            CONFIG.defaultNegativeSeconds;
+
+        dayName =
+            "Manuell";
+
+    }
+
+
+    /*
+        DAGENS OVERRIDE
+    */
+
+    if (override) {
+
+        isOverride =
+            true;
+
+
+        serviceDate =
+            new Date(
+                Number(
+                    override.serviceTimestamp
+                )
+            );
+
+
+        countdownMinutes =
+            Number(
+                override.countdownMinutes
+            );
+
+
+        negativeSeconds =
+            Number(
+                override.negativeSeconds
+            );
+
+    }
+
+
+    if (
+        !serviceDate
+        ||
+        !Number.isFinite(
+            serviceDate.getTime()
+        )
+    ) {
+
+        return null;
+
+    }
+
+
+    if (
+        !Number.isFinite(
+            countdownMinutes
+        )
+        ||
+        countdownMinutes
+        <=
+        0
+    ) {
+
+        countdownMinutes =
+            5;
+
+    }
+
+
+    if (
+        !Number.isFinite(
+            negativeSeconds
+        )
+    ) {
+
+        negativeSeconds =
+            0;
+
+    }
+
+
+    const countdownStart =
+        new Date(
+
+            serviceDate.getTime()
+
+            -
+
+            countdownMinutes
+            *
+            60
+            *
+            1000
+
+        );
+
+
+    return {
+
+        standard:
+            standard,
+
+        dayName:
+            dayName,
+
+        serviceDate:
+            serviceDate,
+
+        countdownStart:
+            countdownStart,
+
+        countdownMinutes:
+            countdownMinutes,
+
+        negativeSeconds:
+            negativeSeconds,
+
+        isOverride:
+            isOverride,
+
+        dateKey:
+            getDateKey(now)
+
+    };
+
+}
+
+
+
+/* ============================================================
+   OBS WEBSOCKET AUTH
+   ============================================================ */
+
+function arrayBufferToBase64(
+    buffer
+) {
+
+    const bytes =
+        new Uint8Array(
+            buffer
+        );
+
+
+    let binary =
+        "";
+
+
+    for (
+        let i = 0;
+        i < bytes.length;
+        i++
+    ) {
+
+        binary +=
+            String.fromCharCode(
+                bytes[i]
+            );
+
+    }
+
+
+    return btoa(
+        binary
+    );
+
+}
+
+
+async function sha256Base64(
+    text
+) {
+
+    if (
+        !window.crypto
+        ||
+        !window.crypto.subtle
+    ) {
+
+        throw new Error(
+            "Web Crypto er ikke tilgjengelig."
+        );
+
+    }
+
+
+    const data =
+        new TextEncoder()
+            .encode(
+                text
+            );
+
+
+    const hash =
+        await crypto.subtle.digest(
+
+            "SHA-256",
+
+            data
+
+        );
+
+
+    return arrayBufferToBase64(
+        hash
+    );
+
+}
+
+
+async function createAuthentication(
+    password,
+    salt,
+    challenge
+) {
+
+    const secret =
+        await sha256Base64(
+
+            password
+            +
+            salt
+
+        );
+
+
+    return await sha256Base64(
+
+        secret
+        +
+        challenge
+
+    );
+
+}
+
+
+
+/* ============================================================
+   OBS CONNECTION
+   ============================================================ */
+
+function setConnectionState(
+    state,
+    text
+) {
+
+    elements.connectionDot
+        .classList
+        .remove(
+            "connected",
+            "connecting"
+        );
+
+
+    if (
+        state ===
+        "connected"
+    ) {
+
+        elements.connectionDot
+            .classList
+            .add(
+                "connected"
+            );
+
+    }
+
+
+    if (
+        state ===
+        "connecting"
+    ) {
+
+        elements.connectionDot
+            .classList
+            .add(
+                "connecting"
+            );
+
+    }
+
+
+    elements.connectionStatus
+        .textContent =
+        text;
+
+}
+
+
+function saveConnectionSettings() {
+
+    const address =
+        elements.websocketAddress
+            .value
+            .trim()
+        ||
+        CONFIG.defaultWebSocketAddress;
+
+
+    localStorage.setItem(
+
+        STORAGE.websocketAddress,
+
+        address
+
+    );
+
+
+    const remember =
+        elements.rememberPassword
+            .checked;
+
+
+    localStorage.setItem(
+
+        STORAGE.rememberPassword,
+
+        String(
+            remember
+        )
+
+    );
+
+
+    if (remember) {
+
+        localStorage.setItem(
+
+            STORAGE.websocketPassword,
+
+            elements.websocketPassword
+                .value
+
+        );
+
+    } else {
+
+        localStorage.removeItem(
+            STORAGE.websocketPassword
+        );
+
+    }
+
+}
+
+
+function loadConnectionSettings() {
+
+    elements.websocketAddress
+        .value =
+        localStorage.getItem(
+            STORAGE.websocketAddress
+        )
+        ||
+        CONFIG.defaultWebSocketAddress;
+
+
+    const remember =
+        localStorage.getItem(
+            STORAGE.rememberPassword
+        )
+        ===
+        "true";
+
+
+    elements.rememberPassword
+        .checked =
+        remember;
+
+
+    if (remember) {
+
+        elements.websocketPassword
+            .value =
+            localStorage.getItem(
+                STORAGE.websocketPassword
+            )
+            ||
+            "";
+
+    }
+
+}
+
+
+function connectToOBS() {
+
+    intentionalDisconnect =
+        false;
+
+
+    clearTimeout(
+        reconnectTimer
+    );
+
+
+    saveConnectionSettings();
+
+
+    const address =
+        elements.websocketAddress
+            .value
+            .trim()
+        ||
+        CONFIG.defaultWebSocketAddress;
+
+
+    setConnectionState(
+        "connecting",
+        "Kobler til OBS..."
+    );
+
+
+    try {
+
+        socket =
+            new WebSocket(
+                address
+            );
+
+    } catch (error) {
+
+        showMessage(
+            error.message,
+            "error"
+        );
+
+        scheduleReconnect();
+
+        return;
+
+    }
+
+
+    socket.addEventListener(
+
+        "message",
+
+        async function(event) {
+
+            let message;
+
+
+            try {
+
+                message =
+                    JSON.parse(
+                        event.data
+                    );
+
+            } catch {
+
+                return;
+
+            }
+
+
+            try {
+
+                await handleOBSMessage(
+                    message
+                );
+
+            } catch (error) {
+
+                console.error(
+                    error
+                );
+
+                showMessage(
+                    error.message,
+                    "error"
+                );
+
+            }
+
+        }
+
+    );
+
+
+    socket.addEventListener(
+
+        "close",
+
+        function(event) {
+
+            obsConnected =
+                false;
+
+
+            rejectAllRequests(
+                "OBS WebSocket ble frakoblet."
+            );
+
+
+            if (
+                intentionalDisconnect
+            ) {
+
+                setConnectionState(
+                    "off",
+                    "Ikke koblet til OBS"
+                );
+
+                return;
+
+            }
+
+
+            setConnectionState(
+                "off",
+                "Mistet forbindelsen til OBS"
+            );
+
+
+            if (
+                event.code ===
+                4009
+            ) {
+
+                showMessage(
+                    "Feil OBS WebSocket-passord.",
+                    "error"
+                );
+
+            } else {
+
+                showMessage(
+                    "OBS frakoblet. Prøver igjen.",
+                    "error"
+                );
+
+            }
+
+
+            scheduleReconnect();
+
+        }
+
+    );
+
+}
+
+
+function disconnectFromOBS() {
+
+    intentionalDisconnect =
+        true;
+
+
+    clearTimeout(
+        reconnectTimer
+    );
+
+
+    if (socket) {
+
+        try {
+
+            socket.close();
+
+        } catch {
+
+        }
+
+    }
+
+
+    socket =
+        null;
+
+
+    obsConnected =
+        false;
+
+
+    setConnectionState(
+        "off",
+        "Ikke koblet til OBS"
+    );
+
+}
+
+
+function scheduleReconnect() {
+
+    if (
+        intentionalDisconnect
+    ) {
+
+        return;
+
+    }
+
+
+    reconnectAttempts++;
+
+
+    const delay =
+        Math.min(
+
+            10000,
+
+            1000
+            +
+            reconnectAttempts
+            *
+            1000
+
+        );
+
+
+    clearTimeout(
+        reconnectTimer
+    );
+
+
+    reconnectTimer =
+        setTimeout(
+
+            connectToOBS,
+
+            delay
+
+        );
+
+}
+
+
+
+/* ============================================================
+   OBS PROTOKOLL
+   ============================================================ */
+
+async function handleOBSMessage(
+    message
+) {
+
+    const op =
+        message.op;
+
+
+    const data =
+        message.d
+        ||
+        {};
+
+
+    /*
+        HELLO
+    */
+
+    if (
+        op ===
+        0
+    ) {
+
+        const identify = {
+
+            rpcVersion: 1,
+
+            eventSubscriptions: 0
+
+        };
+
+
+        if (
+            data.authentication
+        ) {
+
+            const password =
+                elements.websocketPassword
+                    .value;
+
+
+            if (!password) {
+
+                showMessage(
+                    "OBS krever WebSocket-passord.",
+                    "error"
+                );
+
+                socket.close();
+
+                return;
+
+            }
+
+
+            identify.authentication =
+                await createAuthentication(
+
+                    password,
+
+                    data.authentication
+                        .salt,
+
+                    data.authentication
+                        .challenge
+
+                );
+
+        }
+
+
+        socket.send(
+
+            JSON.stringify({
+
+                op: 1,
+
+                d: identify
+
+            })
+
+        );
+
+
+        return;
+
+    }
+
+
+    /*
+        IDENTIFIED
+    */
+
+    if (
+        op ===
+        2
+    ) {
+
+        obsConnected =
+            true;
+
+
+        reconnectAttempts =
+            0;
+
+
+        lastTextSent =
+            null;
+
+
+        sceneItemCache.clear();
+
+
+        setConnectionState(
+            "connected",
+            "Koblet til OBS"
+        );
+
+
+        showMessage(
+            "Tilkoblet OBS.",
+            "success"
+        );
+
+
+        /*
+            Sjekk hvilken scene som er aktiv.
+        */
+
+        try {
+
+            await updateCurrentOBSScene();
+
+        } catch {
+
+        }
+
+
+        return;
+
+    }
+
+
+    /*
+        REQUEST RESPONSE
+    */
+
+    if (
+        op ===
+        7
+    ) {
+
+        const requestId =
+            data.requestId;
+
+
+        if (
+            !pendingRequests.has(
+                requestId
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        const request =
+            pendingRequests.get(
+                requestId
+            );
+
+
+        pendingRequests.delete(
+            requestId
+        );
+
+
+        if (
+            data.requestStatus
+            &&
+            data.requestStatus.result
+        ) {
+
+            request.resolve(
+                data.responseData
+                ||
+                {}
+            );
+
+        } else {
+
+            request.reject(
+
+                new Error(
+
+                    data.requestStatus
+                        ?.comment
+
+                    ||
+
+                    "OBS-request feilet."
+
+                )
+
+            );
+
+        }
+
+    }
+
+}
+
+
+function rejectAllRequests(
+    message
+) {
+
+    for (
+        const request
+        of pendingRequests.values()
+    ) {
+
+        request.reject(
+            new Error(
+                message
+            )
+        );
+
+    }
+
+
+    pendingRequests.clear();
+
+}
+
+
+function obsRequest(
+    requestType,
+    requestData = {}
+) {
+
+    return new Promise(
+
+        function(
+            resolve,
+            reject
+        ) {
+
+            if (
+                !obsConnected
+                ||
+                !socket
+                ||
+                socket.readyState
+                !==
+                WebSocket.OPEN
+            ) {
+
+                reject(
+                    new Error(
+                        "Ikke koblet til OBS."
+                    )
+                );
+
+                return;
+
+            }
+
+
+            requestCounter++;
+
+
+            const requestId =
+                "service-timer-"
+                +
+                Date.now()
+                +
+                "-"
+                +
+                requestCounter;
+
+
+            const timeout =
+                setTimeout(
+
+                    function() {
+
+                        if (
+                            pendingRequests.has(
+                                requestId
+                            )
+                        ) {
+
+                            pendingRequests.delete(
+                                requestId
+                            );
+
+
+                            reject(
+                                new Error(
+                                    "OBS svarte ikke."
+                                )
+                            );
+
+                        }
+
+                    },
+
+                    5000
+
+                );
+
+
+            pendingRequests.set(
+
+                requestId,
+
+                {
+
+                    resolve:
+                        function(data) {
+
+                            clearTimeout(
+                                timeout
+                            );
+
+                            resolve(data);
+
+                        },
+
+                    reject:
+                        function(error) {
+
+                            clearTimeout(
+                                timeout
+                            );
+
+                            reject(error);
+
+                        }
+
+                }
+
+            );
+
+
+            socket.send(
+
+                JSON.stringify({
+
+                    op: 6,
+
+                    d: {
+
+                        requestType:
+                            requestType,
+
+                        requestId:
+                            requestId,
+
+                        requestData:
+                            requestData
+
+                    }
+
+                })
+
+            );
+
+        }
+
+    );
+
+}
+
+
+
+/* ============================================================
+   AKTIV OBS-SCENE
+   ============================================================ */
+
+async function getCurrentProgramScene() {
+
+    const response =
+        await obsRequest(
+            "GetCurrentProgramScene"
+        );
+
+
+    return (
+        response.currentProgramSceneName
+        ||
+        response.sceneName
+        ||
+        null
+    );
+
+}
+
+
+async function updateCurrentOBSScene() {
+
+    if (!obsConnected) {
+
+        return null;
+
+    }
+
+
+    try {
+
+        const sceneName =
+            await getCurrentProgramScene();
+
+
+        if (sceneName) {
+
+            lastCurrentScene =
+                sceneName;
+
+
+            elements.currentSceneValue
+                .textContent =
+                sceneName;
+
+        }
+
+
+        return sceneName;
+
+    } catch {
+
+        return null;
+
+    }
+
+}
+
+
+
+/* ============================================================
+   TEXT SOURCE
+   ============================================================ */
+
+async function setTimerText(
+    text,
+    force = false
+) {
+
+    if (
+        !force
+        &&
+        text ===
+        lastTextSent
+    ) {
+
+        return;
+
+    }
+
+
+    if (!obsConnected) {
+
+        return;
+
+    }
+
+
+    try {
+
+        await obsRequest(
+
+            "SetInputSettings",
+
+            {
+
+                inputName:
+                    CONFIG.timerTextSource,
+
+                inputSettings: {
+
+                    text:
+                        text
+
+                },
+
+                overlay:
+                    true
+
+            }
+
+        );
+
+
+        lastTextSent =
+            text;
+
+    } catch (error) {
+
+        console.error(
+            "Kunne ikke oppdatere timertekst:",
+            error
+        );
+
+    }
+
+}
+
+
+
+/* ============================================================
+   SCENE ITEM ID
+   ============================================================ */
+
+async function getSceneItemId(
+    sceneName,
+    sourceName
+) {
+
+    const response =
+        await obsRequest(
+
+            "GetSceneItemId",
+
+            {
+
+                sceneName:
+                    sceneName,
+
+                sourceName:
+                    sourceName
+
+            }
+
+        );
+
+
+    return response.sceneItemId;
+
+}
+
+
+
+/* ============================================================
+   FINN TIMER-ELEMENTENE I EN SCENE
+   ============================================================ */
+
+async function getTimerSceneItems(
+    sceneName
+) {
+
+    if (
+        sceneItemCache.has(
+            sceneName
+        )
+    ) {
+
+        return sceneItemCache.get(
+            sceneName
+        );
+
+    }
+
+
+    let timerId = null;
+
+    let backgroundId = null;
+
+
+    try {
+
+        timerId =
+            await getSceneItemId(
+
+                sceneName,
+
+                CONFIG.timerTextSource
+
+            );
+
+    } catch {
+
+        timerId =
+            null;
+
+    }
+
+
+    try {
+
+        backgroundId =
+            await getSceneItemId(
+
+                sceneName,
+
+                CONFIG.timerBackgroundSource
+
+            );
+
+    } catch {
+
+        backgroundId =
+            null;
+
+    }
+
+
+    const result = {
+
+        timer:
+            timerId,
+
+        background:
+            backgroundId
+
+    };
+
+
+    sceneItemCache.set(
+        sceneName,
+        result
+    );
+
+
+    return result;
+
+}
+
+
+
+/* ============================================================
+   SETT SCENE ITEM ENABLED
+   ============================================================ */
+
+async function setSceneItemEnabled(
+    sceneName,
+    sceneItemId,
+    enabled
+) {
+
+    await obsRequest(
+
+        "SetSceneItemEnabled",
+
+        {
+
+            sceneName:
+                sceneName,
+
+            sceneItemId:
+                sceneItemId,
+
+            sceneItemEnabled:
+                enabled
+
+        }
+
+    );
+
+}
+
+
+
+/* ============================================================
+   VIS TIMER I EN BESTEMT SCENE
+   ============================================================ */
+
+async function showTimerInScene(
+    sceneName,
+    showErrors = false
+) {
+
+    if (!sceneName) {
+
+        return false;
+
+    }
+
+
+    const items =
+        await getTimerSceneItems(
+            sceneName
+        );
+
+
+    /*
+        Timertekst må finnes.
+    */
+
+    if (
+        items.timer ===
+        null
+    ) {
+
+        if (showErrors) {
+
+            showMessage(
+
+                'Fant ikke "'
+                +
+                CONFIG.timerTextSource
+                +
+                '" direkte i scene "'
+                +
+                sceneName
+                +
+                '".',
+
+                "error"
+
+            );
+
+        }
+
+
+        return false;
+
+    }
+
+
+    /*
+        Bakgrunn må også finnes.
+    */
+
+    if (
+        items.background ===
+        null
+    ) {
+
+        if (showErrors) {
+
+            showMessage(
+
+                'Fant ikke "'
+                +
+                CONFIG.timerBackgroundSource
+                +
+                '" direkte i scene "'
+                +
+                sceneName
+                +
+                '".',
+
+                "error"
+
+            );
+
+        }
+
+
+        return false;
+
+    }
+
+
+    /*
+        Bakgrunn først.
+    */
+
+    await setSceneItemEnabled(
+
+        sceneName,
+
+        items.background,
+
+        true
+
+    );
+
+
+    /*
+        Tekst oppå.
+    */
+
+    await setSceneItemEnabled(
+
+        sceneName,
+
+        items.timer,
+
+        true
+
+    );
+
+
+    timerEnabledScenes.add(
+        sceneName
+    );
+
+
+    return true;
+
+}
+
+
+
+/* ============================================================
+   SKJUL TIMER I EN BESTEMT SCENE
+   ============================================================ */
+
+async function hideTimerInScene(
+    sceneName
+) {
+
+    if (!sceneName) {
+
+        return;
+
+    }
+
+
+    const items =
+        await getTimerSceneItems(
+            sceneName
+        );
+
+
+    /*
+        Tekst først av.
+    */
+
+    if (
+        items.timer !==
+        null
+    ) {
+
+        try {
+
+            await setSceneItemEnabled(
+
+                sceneName,
+
+                items.timer,
+
+                false
+
+            );
+
+        } catch {
+
+        }
+
+    }
+
+
+    /*
+        Bakgrunn av.
+    */
+
+    if (
+        items.background !==
+        null
+    ) {
+
+        try {
+
+            await setSceneItemEnabled(
+
+                sceneName,
+
+                items.background,
+
+                false
+
+            );
+
+        } catch {
+
+        }
+
+    }
+
+
+    timerEnabledScenes.delete(
+        sceneName
+    );
+
+}
+
+
+
+/* ============================================================
+   SKJUL TIMER I ALLE SCENER DEN HAR VÆRT VIST I
+   ============================================================ */
+
+async function hideTimerEverywhere() {
+
+    const scenes =
+        Array.from(
+            timerEnabledScenes
+        );
+
+
+    for (
+        const sceneName
+        of scenes
+    ) {
+
+        await hideTimerInScene(
+            sceneName
+        );
+
+    }
+
+
+    /*
+        Sørg også for å prøve aktiv scene.
+    */
+
+    const activeScene =
+        await updateCurrentOBSScene();
+
+
+    if (
+        activeScene
+        &&
+        !scenes.includes(
+            activeScene
+        )
+    ) {
+
+        await hideTimerInScene(
+            activeScene
+        );
+
+    }
+
+}
+
+
+
+/* ============================================================
+   TIMER SKAL VÆRE SYNLIG I AKTIV SCENE
+   ============================================================ */
+
+async function ensureTimerVisibleInCurrentScene() {
+
+    const now =
+        Date.now();
+
+
+    if (
+        now -
+        lastSceneCheck
+        <
+        CONFIG.sceneCheckMilliseconds
+    ) {
+
+        return;
+
+    }
+
+
+    lastSceneCheck =
+        now;
+
+
+    const sceneName =
+        await updateCurrentOBSScene();
+
+
+    if (!sceneName) {
+
+        return;
+
+    }
+
+
+    /*
+        Dersom vi ikke allerede har aktivert
+        timeren i denne scenen, gjør det nå.
+    */
+
+    if (
+        !timerEnabledScenes.has(
+            sceneName
+        )
+    ) {
+
+        const success =
+            await showTimerInScene(
+                sceneName,
+                false
+            );
+
+
+        if (!success) {
+
+            console.warn(
+
+                "Timer sources finnes ikke direkte i scene:",
+
+                sceneName
+
+            );
+
+        }
+
+    }
+
+}
+
+
+
+/* ============================================================
+   TIMERLOGIKK
+   ============================================================ */
+
+async function processTimer(
+    now,
+    schedule
+) {
+
+    /*
+        INGEN PLAN
+    */
+
+    if (!schedule) {
+
+        await setTimerText(
+            ""
+        );
+
+
+        await hideTimerEverywhere();
+
+
+        return;
+
+    }
+
+
+    const scheduleKey =
+
+        schedule.dateKey
+
+        +
+        "|"
+
+        +
+        schedule.serviceDate.getTime()
+
+        +
+        "|"
+
+        +
+        schedule.countdownMinutes
+
+        +
+        "|"
+
+        +
+        schedule.negativeSeconds;
+
+
+    /*
+        Ny plan / override.
+    */
+
+    if (
+        scheduleKey !==
+        previousScheduleKey
+    ) {
+
+        previousScheduleKey =
+            scheduleKey;
+
+
+        manuallyHidden =
+            false;
+
+
+        lastTextSent =
+            null;
+
+    }
+
+
+    /*
+        Manuelt skjult.
+    */
+
+    if (
+        manuallyHidden
+    ) {
+
+        await setTimerText(
+            ""
+        );
+
+
+        await hideTimerEverywhere();
+
+
+        return;
+
+    }
+
+
+    const nowMs =
+        now.getTime();
+
+
+    const countdownStartMs =
+        schedule.countdownStart
+            .getTime();
+
+
+    const serviceMs =
+        schedule.serviceDate
+            .getTime();
+
+
+    /*
+        FØR COUNTDOWN
+    */
+
+    if (
+        nowMs <
+        countdownStartMs
+    ) {
+
+        await setTimerText(
+            ""
+        );
+
+
+        await hideTimerEverywhere();
+
+
+        return;
+
+    }
+
+
+    /*
+        POSITIV COUNTDOWN
+    */
+
+    if (
+        nowMs <
+        serviceMs
+    ) {
+
+        const text =
+            formatPositiveCountdown(
+
+                serviceMs
+                -
+                nowMs
+
+            );
+
+
+        await setTimerText(
+            text
+        );
+
+
+        await ensureTimerVisibleInCurrentScene();
+
+
+        return;
+
+    }
+
+
+    /*
+        ETTER START
+    */
+
+    const millisecondsPast =
+        nowMs
+        -
+        serviceMs;
+
+
+    const secondsPast =
+        Math.floor(
+
+            millisecondsPast
+            /
+            1000
+
+        );
+
+
+    /*
+        SKJUL VED 00:00
+    */
+
+    if (
+        schedule.negativeSeconds
+        ===
+        0
+    ) {
+
+        await setTimerText(
+            ""
+        );
+
+
+        await hideTimerEverywhere();
+
+
+        return;
+
+    }
+
+
+    /*
+        BEGRENSET MINUSTID ER FERDIG
+    */
+
+    if (
+        schedule.negativeSeconds
+        >
+        0
+
+        &&
+
+        secondsPast
+        >
+        schedule.negativeSeconds
+    ) {
+
+        await setTimerText(
+            ""
+        );
+
+
+        await hideTimerEverywhere();
+
+
+        return;
+
+    }
+
+
+    /*
+        FØRSTE SEKUND = 00:00
+    */
+
+    if (
+        millisecondsPast
+        <
+        1000
+    ) {
+
+        await setTimerText(
+            "00:00"
+        );
+
+
+        await ensureTimerVisibleInCurrentScene();
+
+
+        return;
+
+    }
+
+
+    /*
+        MINUS
+    */
+
+    const text =
+        formatNegativeCountdown(
+            millisecondsPast
+        );
+
+
+    await setTimerText(
+        text
+    );
+
+
+    await ensureTimerVisibleInCurrentScene();
+
+}
+
+
+
+/* ============================================================
+   UI
+   ============================================================ */
+
+function describeNegative(
+    seconds
+) {
+
+    if (
+        seconds ===
+        -1
+    ) {
+
+        return "Ubegrenset minus";
+
+    }
+
+
+    if (
+        seconds ===
+        0
+    ) {
+
+        return "Skjul ved 0";
+
+    }
+
+
+    const minutes =
+        Math.floor(
+            seconds
+            /
+            60
+        );
+
+
+    const remainingSeconds =
+        seconds
+        %
+        60;
+
+
+    return (
+        "Til -"
+        +
+        pad2(minutes)
+        +
+        ":"
+        +
+        pad2(remainingSeconds)
+    );
+
+}
+
+
+function updateUI(
+    now,
+    schedule
+) {
+
+    elements.currentClock
+        .textContent =
+
+        formatNorwegianDate(
+            now
+        )
+
+        +
+        " • "
+
+        +
+        formatClock(
+            now
+        );
+
+
+    elements.countdownDisplay
+        .classList
+        .remove(
+            "waiting",
+            "negative"
+        );
+
+
+    elements.timerMode
+        .classList
+        .remove(
+            "active",
+            "override"
+        );
+
+
+    if (!schedule) {
+
+        elements.dayValue
+            .textContent =
+            "Ingen plan";
+
+
+        elements.standardTimeValue
+            .textContent =
+            "-";
+
+
+        elements.effectiveTimeValue
+            .textContent =
+            "-";
+
+
+        elements.countdownMinutesValue
+            .textContent =
+            "-";
+
+
+        elements.countdownStartValue
+            .textContent =
+            "-";
+
+
+        elements.negativeValue
+            .textContent =
+            "-";
+
+
+        elements.countdownDisplay
+            .textContent =
+            "--";
+
+
+        elements.countdownDisplay
+            .classList
+            .add(
+                "waiting"
+            );
+
+
+        elements.timerMode
+            .textContent =
+            "Ingen timer i dag";
+
+
+        return;
+
+    }
+
+
+    elements.dayValue
+        .textContent =
+        schedule.dayName;
+
+
+    elements.standardTimeValue
+        .textContent =
+
+        schedule.standard
+        ?
+        schedule.standard.serviceTime
+        :
+        "-";
+
+
+    elements.effectiveTimeValue
+        .textContent =
+        formatHHMM(
+            schedule.serviceDate
+        );
+
+
+    elements.countdownMinutesValue
+        .textContent =
+
+        schedule.countdownMinutes
+        +
+        " min";
+
+
+    elements.countdownStartValue
+        .textContent =
+        formatHHMM(
+            schedule.countdownStart
+        );
+
+
+    elements.negativeValue
+        .textContent =
+        describeNegative(
+            schedule.negativeSeconds
+        );
+
+
+    const nowMs =
+        now.getTime();
+
+
+    const countdownStartMs =
+        schedule.countdownStart
+            .getTime();
+
+
+    const serviceMs =
+        schedule.serviceDate
+            .getTime();
+
+
+    /*
+        FØR START
+    */
+
+    if (
+        nowMs <
+        countdownStartMs
+    ) {
+
+        elements.countdownDisplay
+            .textContent =
+            "Venter";
+
+
+        elements.countdownDisplay
+            .classList
+            .add(
+                "waiting"
+            );
+
+
+        if (
+            schedule.isOverride
+        ) {
+
+            elements.timerMode
+                .textContent =
+                "Dagens innstilling er endret";
+
+
+            elements.timerMode
+                .classList
+                .add(
+                    "override"
+                );
+
+        } else {
+
+            elements.timerMode
+                .textContent =
+                "Standardtid aktiv";
+
+        }
+
+
+        return;
+
+    }
+
+
+    /*
+        COUNTDOWN
+    */
+
+    if (
+        nowMs <
+        serviceMs
+    ) {
+
+        elements.countdownDisplay
+            .textContent =
+            formatPositiveCountdown(
+
+                serviceMs
+                -
+                nowMs
+
+            );
+
+
+        elements.timerMode
+            .textContent =
+            "Timer aktiv";
+
+
+        elements.timerMode
+            .classList
+            .add(
+                "active"
+            );
+
+
+        return;
+
+    }
+
+
+    const millisecondsPast =
+        nowMs
+        -
+        serviceMs;
+
+
+    const secondsPast =
+        Math.floor(
+
+            millisecondsPast
+            /
+            1000
+
+        );
+
+
+    /*
+        TIMER FERDIG
+    */
+
+    if (
+        schedule.negativeSeconds
+        ===
+        0
+
+        ||
+
+        (
+            schedule.negativeSeconds
+            >
+            0
+
+            &&
+
+            secondsPast
+            >
+            schedule.negativeSeconds
+        )
+    ) {
+
+        elements.countdownDisplay
+            .textContent =
+            "Skjult";
+
+
+        elements.countdownDisplay
+            .classList
+            .add(
+                "waiting"
+            );
+
+
+        elements.timerMode
+            .textContent =
+            "Timer ferdig";
+
+
+        return;
+
+    }
+
+
+    /*
+        MINUS / 00:00
+    */
+
+    if (
+        millisecondsPast
+        <
+        1000
+    ) {
+
+        elements.countdownDisplay
+            .textContent =
+            "00:00";
+
+    } else {
+
+        elements.countdownDisplay
+            .textContent =
+            formatNegativeCountdown(
+                millisecondsPast
+            );
+
+    }
+
+
+    elements.countdownDisplay
+        .classList
+        .add(
+            "negative"
+        );
+
+
+    elements.timerMode
+        .textContent =
+        "Over starttid";
+
+}
+
+
+
+/* ============================================================
+   DAGENS INNSTILLINGER
+   ============================================================ */
+
+elements.applyTodayButton
+    .addEventListener(
+
+        "click",
+
+        function() {
+
+            const now =
+                new Date();
+
+
+            const serviceDate =
+                timeStringToDate(
+
+                    now,
+
+                    elements.overrideTime
+                        .value
+
+                );
+
+
+            if (!serviceDate) {
+
+                showMessage(
+                    "Velg en gyldig starttid.",
+                    "error"
+                );
+
+                return;
+
+            }
+
+
+            const countdownMinutes =
+                Number(
+                    elements.countdownMinutes
+                        .value
+                );
+
+
+            const negativeSeconds =
+                Number(
+                    elements.negativeDuration
+                        .value
+                );
+
+
+            saveTodayOverride({
+
+                date:
+                    getDateKey(
+                        now
+                    ),
+
+                serviceTimestamp:
+                    serviceDate
+                        .getTime(),
+
+                countdownMinutes:
+                    countdownMinutes,
+
+                negativeSeconds:
+                    negativeSeconds
+
+            });
+
+
+            previousScheduleKey =
+                null;
+
+
+            manuallyHidden =
+                false;
+
+
+            showMessage(
+
+                "Dagens timer er oppdatert: "
+                +
+                formatHHMM(
+                    serviceDate
+                )
+                +
+                ", "
+                +
+                countdownMinutes
+                +
+                " min før start.",
+
+                "success"
+
+            );
+
+        }
+
+    );
+
+
+
+elements.resetTodayButton
+    .addEventListener(
+
+        "click",
+
+        function() {
+
+            clearTodayOverride();
+
+
+            previousScheduleKey =
+                null;
+
+
+            manuallyHidden =
+                false;
+
+
+            const now =
+                new Date();
+
+
+            const standard =
+                CONFIG.schedule[
+                    now.getDay()
+                ];
+
+
+            if (standard) {
+
+                elements.overrideTime
+                    .value =
+                    standard.serviceTime;
+
+
+                elements.countdownMinutes
+                    .value =
+                    String(
+                        standard.countdownMinutes
+                    );
+
+
+                elements.negativeDuration
+                    .value =
+                    String(
+                        CONFIG.defaultNegativeSeconds
+                    );
+
+            }
+
+
+            showMessage(
+                "Dagens endringer er fjernet. Standard brukes.",
+                "success"
+            );
+
+        }
+
+    );
+
+
+
+elements.startFromNowButton
+    .addEventListener(
+
+        "click",
+
+        function() {
+
+            const now =
+                new Date();
+
+
+            const countdownMinutes =
+                Number(
+                    elements.countdownMinutes
+                        .value
+                );
+
+
+            const negativeSeconds =
+                Number(
+                    elements.negativeDuration
+                        .value
+                );
+
+
+            const serviceDate =
+                new Date(
+
+                    now.getTime()
+
+                    +
+
+                    countdownMinutes
+                    *
+                    60
+                    *
+                    1000
+
+                );
+
+
+            serviceDate.setMilliseconds(
+                0
+            );
+
+
+            saveTodayOverride({
+
+                date:
+                    getDateKey(
+                        now
+                    ),
+
+                serviceTimestamp:
+                    serviceDate
+                        .getTime(),
+
+                countdownMinutes:
+                    countdownMinutes,
+
+                negativeSeconds:
+                    negativeSeconds
+
+            });
+
+
+            previousScheduleKey =
+                null;
+
+
+            manuallyHidden =
+                false;
+
+
+            showMessage(
+
+                "Timer startet. Ny starttid: "
+                +
+                formatClock(
+                    serviceDate
+                ),
+
+                "success"
+
+            );
+
+        }
+
+    );
+
+
+
+function addMinutesToStart(
+    minutes
+) {
+
+    const now =
+        new Date();
+
+
+    const schedule =
+        getTodaySchedule(
+            now
+        );
+
+
+    if (!schedule) {
+
+        showMessage(
+            "Ingen timer er satt i dag.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    let base =
+        schedule.serviceDate;
+
+
+    /*
+        Hvis starttid allerede er passert,
+        regnes ekstra tid fra nå.
+    */
+
+    if (
+        base.getTime()
+        <
+        now.getTime()
+    ) {
+
+        base =
+            now;
+
+    }
+
+
+    const serviceDate =
+        new Date(
+
+            base.getTime()
+
+            +
+
+            minutes
+            *
+            60
+            *
+            1000
+
+        );
+
+
+    serviceDate.setMilliseconds(
+        0
+    );
+
+
+    saveTodayOverride({
+
+        date:
+            getDateKey(
+                now
+            ),
+
+        serviceTimestamp:
+            serviceDate
+                .getTime(),
+
+        countdownMinutes:
+            schedule.countdownMinutes,
+
+        negativeSeconds:
+            schedule.negativeSeconds
+
+    });
+
+
+    previousScheduleKey =
+        null;
+
+
+    manuallyHidden =
+        false;
+
+
+    showMessage(
+
+        "Starttid utsatt "
+        +
+        minutes
+        +
+        " min. Ny tid: "
+        +
+        formatClock(
+            serviceDate
+        ),
+
+        "success"
+
+    );
+
+}
+
+
+
+elements.addOneMinuteButton
+    .addEventListener(
+
+        "click",
+
+        function() {
+
+            addMinutesToStart(
+                1
+            );
+
+        }
+
+    );
+
+
+
+elements.addFiveMinutesButton
+    .addEventListener(
+
+        "click",
+
+        function() {
+
+            addMinutesToStart(
+                5
+            );
+
+        }
+
+    );
+
+
+
+elements.hideNowButton
+    .addEventListener(
+
+        "click",
+
+        async function() {
+
+            manuallyHidden =
+                true;
+
+
+            await setTimerText(
+                "",
+                true
+            );
+
+
+            await hideTimerEverywhere();
+
+
+            showMessage(
+                "Timer og bakgrunn er skjult.",
+                "success"
+            );
+
+        }
+
+    );
+
+
+
+/* ============================================================
+   OBS INNSTILLINGSKNAPPER
+   ============================================================ */
+
+elements.showConnectionButton
+    .addEventListener(
+
+        "click",
+
+        function() {
+
+            const visible =
+                elements.connectionSettings
+                    .classList
+                    .toggle(
+                        "visible"
+                    );
+
+
+            elements.showConnectionButton
+                .textContent =
+
+                visible
+
+                ?
+
+                "Skjul tilkoblingsinnstillinger"
+
+                :
+
+                "Vis tilkoblingsinnstillinger";
+
+        }
+
+    );
+
+
+
+elements.connectButton
+    .addEventListener(
+
+        "click",
+
+        function() {
+
+            connectToOBS();
+
+        }
+
+    );
+
+
+
+elements.disconnectButton
+    .addEventListener(
+
+        "click",
+
+        function() {
+
+            disconnectFromOBS();
+
+        }
+
+    );
+
+
+
+elements.testShowButton
+    .addEventListener(
+
+        "click",
+
+        async function() {
+
+            if (!obsConnected) {
+
+                showMessage(
+                    "Ikke koblet til OBS.",
+                    "error"
+                );
+
+                return;
+
+            }
+
+
+            await setTimerText(
+                "05:00",
+                true
+            );
+
+
+            const sceneName =
+                await updateCurrentOBSScene();
+
+
+            const success =
+                await showTimerInScene(
+                    sceneName,
+                    true
+                );
+
+
+            if (success) {
+
+                showMessage(
+                    "Timer og bakgrunn vises i aktiv scene.",
+                    "success"
+                );
+
+            }
+
+        }
+
+    );
+
+
+
+elements.testHideButton
+    .addEventListener(
+
+        "click",
+
+        async function() {
+
+            await setTimerText(
+                "",
+                true
+            );
+
+
+            await hideTimerEverywhere();
+
+
+            showMessage(
+                "Timer og bakgrunn er skjult.",
+                "success"
+            );
+
+        }
+
+    );
+
+
+
+/* ============================================================
+   HOVEDLOOP
+   ============================================================ */
+
+async function tick() {
+
+    const now =
+        new Date();
+
+
+    const schedule =
+        getTodaySchedule(
+            now
+        );
+
+
+    updateUI(
+        now,
+        schedule
+    );
+
+
+    if (processing) {
+
+        return;
+
+    }
+
+
+    processing =
+        true;
+
+
+    try {
+
+        await processTimer(
+            now,
+            schedule
+        );
+
+    } catch (error) {
+
+        console.error(
+            error
+        );
+
+    } finally {
+
+        processing =
+            false;
+
+    }
+
+}
+
+
+
+/* ============================================================
+   KONTROLLER VED OPPSTART
+   ============================================================ */
+
+function populateControls() {
+
+    const now =
+        new Date();
+
+
+    const schedule =
+        getTodaySchedule(
+            now
+        );
+
+
+    if (schedule) {
+
+        elements.overrideTime
+            .value =
+            formatHHMM(
+                schedule.serviceDate
+            );
+
+
+        elements.countdownMinutes
+            .value =
+            String(
+                schedule.countdownMinutes
+            );
+
+
+        elements.negativeDuration
+            .value =
+            String(
+                schedule.negativeSeconds
+            );
+
+
+        return;
+
+    }
+
+
+    elements.overrideTime
+        .value =
+        formatHHMM(
+            now
+        );
+
+
+    elements.countdownMinutes
+        .value =
+        "5";
+
+
+    elements.negativeDuration
+        .value =
+        String(
+            CONFIG.defaultNegativeSeconds
+        );
+
+}
+
+
+
+/* ============================================================
+   INITIALISERING
+   ============================================================ */
+
+function initialize() {
+
+    loadConnectionSettings();
+
+
+    populateControls();
+
+
+    tick();
+
+
+    setInterval(
+
+        tick,
+
+        CONFIG.tickMilliseconds
+
+    );
+
+
+    /*
+        Automatisk OBS-tilkobling.
+    */
+
+    setTimeout(
+
+        connectToOBS,
+
+        500
+
+    );
+
+}
+
+
+initialize();
+
+</script>
+
+</body>
+  </html>
